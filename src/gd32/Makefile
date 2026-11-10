@@ -1,4 +1,4 @@
-# at32f40x build rules
+# gd32 build rules
 
 # Setup the toolchain
 CROSS_PREFIX=arm-none-eabi-
@@ -38,6 +38,10 @@ CFLAGS += $(CFLAGS-y) -D$(MCU_UPPER) -mthumb -Ilib/cmsis-core
 
 
 CFLAGS_klipper.elf += --specs=nano.specs --specs=nosys.specs
+# GCC 13 pulls libgcc's unwinder in through newlib-nano, and the unwinder
+# wants the bounds of the exception index. Nothing in the firmware unwinds
+# and the linker script has no .ARM.exidx section, so the bounds are empty.
+CFLAGS_klipper.elf += -Wl,--defsym=__exidx_start=0 -Wl,--defsym=__exidx_end=0
 CFLAGS_klipper.elf += -T $(OUT)src/generic/armcm_link.ld
 $(OUT)klipper.elf: $(OUT)src/generic/armcm_link.ld
 
@@ -47,18 +51,16 @@ src-y += generic/armcm_reset.c generic/crc16_ccitt.c
 src-y += gd32/dfu_reboot.c
 
 src-$(CONFIG_MACH_GD32F30X) += gd32/gd32f30x.c gd32/gd32f30x_gpio.c
-# src-$(CONFIG_MACH_GD32F30X) += generic/armcm_timer.c
-src-$(CONFIG_MACH_GD32F30X) += gd32/gd32e23x_timer.c generic/timer_irq.c
+# The Cortex-M4 has a 32 bit cycle counter: the generic timer, as upstream
+# uses on the STM32F1 and F4. The 16 bit timer file is for the Cortex-M23,
+# which has none, and costs a wrap event every 0x8000 ticks.
+src-$(CONFIG_MACH_GD32F30X) += generic/armcm_timer.c
 # pwm-src-$(CONFIG_MACH_GD32F30X) := gd32/hard_pwm.c
 
 src-$(CONFIG_MACH_GD32E23X) += gd32/gd32e23x.c gd32/gd32e23x_gpio.c  
 src-$(CONFIG_MACH_GD32E23X) += gd32/gd32e23x_timer.c generic/timer_irq.c
 
 src-$(CONFIG_WANT_GPIO_ADC) += gd32/adc.c
-src-$(CONFIG_WANT_GPIO_I2C) += gd32/i2c.c
-src-$(CONFIG_WANT_GPIO_SPI) += gd32/spi.c
-src-$(CONFIG_USBSERIAL) += gd32/usbserial.c
-src-$(CONFIG_USBSERIAL) += generic/usb_cdc.c
 src-$(CONFIG_SERIAL) += gd32/serial.c generic/serial_irq.c
 src-$(CONFIG_HAVE_GPIO_HARD_PWM) += $(pwm-src-y)
 

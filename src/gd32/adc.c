@@ -197,7 +197,6 @@ struct gpio_adc gpio_adc_setup(uint8_t pin)
 {
 	uint32_t chan;
 	
-	uint32_t delay = 0xfffff;
 	
 	struct gpio_adc gpio_adc_rt;
 
@@ -262,7 +261,10 @@ struct gpio_adc gpio_adc_setup(uint8_t pin)
     _ADC_CTL1 |= (uint32_t)ADC_CTL1_ADCON; //adc_enable
 	
 	//delay 1ms
-	for(;delay > 0; delay--);
+	// (an empty counting loop stood here; the compiler removes those)
+	uint32_t end = timer_read_time() + timer_from_us(1000);
+	while(timer_is_before(timer_read_time(), end))
+		;
 	
     _ADC_CTL1 |= (uint32_t) ADC_CTL1_RSTCLB; //calibration_reset
     
@@ -271,6 +273,12 @@ struct gpio_adc gpio_adc_setup(uint8_t pin)
     _ADC_CTL1 |= ADC_CTL1_CLB; //calibration_en
     
 	while((_ADC_CTL1 & ADC_CTL1_CLB));
+
+	// Switching the ADC on again for a second and third pin leaves a
+	// finished conversion of channel 0 behind. Nobody owns it: left in
+	// place it looks like another input's conversion in progress, and every
+	// input other than channel 0 would wait for it forever.
+	_ADC_STAT &= ~((uint32_t)(ADC_FLAG_EOC | ADC_FLAG_STRC));
 
 	return gpio_adc_rt;
 }
@@ -281,7 +289,9 @@ gpio_adc_sample(struct gpio_adc g)
 {
 	if(_ADC_STAT & ADC_FLAG_STRC) //start of group conversion flag
 	{
-		if(_ADC_STAT & ADC_FLAG_EOC) //end of group conversion flag
+		// ready only when the finished conversion is this channel's: another
+		// analog input may have started the one that is in the data register
+		if((_ADC_STAT & ADC_FLAG_EOC) && (_ADC_RSQ2 & ADC_RSQX_RSQN) == g.chan)
 		{
 			return 0;
 		}
@@ -313,7 +323,8 @@ gpio_adc_cancel_sample(struct gpio_adc g)
 {
 	irqstatus_t flag = irq_save();
 
-	if(_ADC_STAT & ADC_FLAG_EOC) //end of group conversion flag
+	// drop a conversion only if it is this channel's, as upstream does
+	if((_ADC_STAT & ADC_FLAG_STRC) && (_ADC_RSQ2 & ADC_RSQX_RSQN) == g.chan)
 	{
 		gpio_adc_read(g);
 	}

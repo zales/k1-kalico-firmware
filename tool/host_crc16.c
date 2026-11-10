@@ -101,12 +101,35 @@ main(int argc, char* argv[])
 	}while(tmpLen > 0);
 
 
+	/* The version string starts at 0x200 and is 12 characters long (src/command.c
+	 * checks that); the CRC and the length go right behind its terminator. */
+	if(flen < 0x212)
+	{
+		printf("image too short for the version block (%u bytes)\r\n", flen);
+
+		fclose(f);
+
+		return -1;
+	}
+
 	fseek(f,0x20C,SEEK_SET);
 
-	fwrite(&crc16Rtn,1,2,f);
-	
-	fwrite(&flen,1,4,f);
+	/* little-endian, whatever the build host is */
+	uint8_t tail[6] = {
+		crc16Rtn & 0xff, (crc16Rtn >> 8) & 0xff,
+		flen & 0xff, (flen >> 8) & 0xff, (flen >> 16) & 0xff, (flen >> 24) & 0xff
+	};
 
+	if(fwrite(tail,1,sizeof(tail),f) != sizeof(tail))
+	{
+		printf("write failure.\r\n");
+
+		fclose(f);
+
+		return -1;
+	}
+	
+	
 	fclose(f);
 
 	printf("  CRC16 is 0x%0x\r\n  Length is 0x%0x\r\n",crc16Rtn,flen);
