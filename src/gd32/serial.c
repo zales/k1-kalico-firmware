@@ -132,6 +132,11 @@ serial_init(void)
 
 #if CONFIG_MACH_GD32E230X8
 
+	// No overrun detection, as upstream does on this kind of USART: the
+	// overrun flag raises the receive interrupt, reading the data register
+	// does not clear it, and the handler would then be entered forever.
+	USART_CTL2(USARTx) |= USART_CTL2_OVRD;
+
 	if(USART_CTL0(USARTx) & USART_CTL0_OVSMOD)
 	{
         /* oversampling by 8, configure the value of USART_BAUD */
