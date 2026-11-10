@@ -1,0 +1,37 @@
+# Build every firmware configuration in the repository (.config.*) on each
+# push and pull request, so that a change which breaks one of the boards is
+# seen before it reaches a printer. The binaries are kept as an artifact.
+name: Build firmware
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [mcu, noz, bed, ke-mcu, cr10se-mcu, cr10se-noz, e3v3-mcu, e3v3-noz, e3v3-bed, e5m-mcu, e5m-noz, e5m-bed]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq gcc-arm-none-eabi libnewlib-arm-none-eabi
+
+      - name: Build .config.${{ matrix.config }}
+        run: |
+          cp ".config.${{ matrix.config }}" .config
+          make olddefconfig
+          make -j"$(nproc)"
+          ls -l out/*.bin
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.config }}
+          path: out/*.bin
+          if-no-files-found: error
