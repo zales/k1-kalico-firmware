@@ -51,8 +51,10 @@ src-y += generic/armcm_reset.c generic/crc16_ccitt.c
 src-y += gd32/dfu_reboot.c
 
 src-$(CONFIG_MACH_GD32F30X) += gd32/gd32f30x.c gd32/gd32f30x_gpio.c
-# src-$(CONFIG_MACH_GD32F30X) += generic/armcm_timer.c
-src-$(CONFIG_MACH_GD32F30X) += gd32/gd32e23x_timer.c generic/timer_irq.c
+# The Cortex-M4 has a 32 bit cycle counter: the generic timer, as upstream
+# uses on the STM32F1 and F4. The 16 bit timer file is for the Cortex-M23,
+# which has none, and costs a wrap event every 0x8000 ticks.
+src-$(CONFIG_MACH_GD32F30X) += generic/armcm_timer.c
 # pwm-src-$(CONFIG_MACH_GD32F30X) := gd32/hard_pwm.c
 
 src-$(CONFIG_MACH_GD32E23X) += gd32/gd32e23x.c gd32/gd32e23x_gpio.c  
