@@ -14,12 +14,16 @@
 #include "sched.h" // sched_is_shutdown
 
 #include "autoconf.h"
-#define BUILD_MACHINE_UID  CONFIG_BUILD_MACHINE_UID __DATE__ __TIME__
+// No build date and time in here: the same source has to give the same image.
+#define BUILD_MACHINE_UID  CONFIG_BUILD_MACHINE_UID
 DECL_CONSTANT_STR("build_machine_uid", BUILD_MACHINE_UID);
 
 #if CONFIG_BOARD_INFO_CONFIGURE
 #define FIRMWARE_VERSION BOARD_FW_VERSION
-//DECL_CONSTANT_STR("firmware_version", FIRMWARE_VERSION);
+// The version sits at offset 0x200 of the image and tool/host_crc16.c writes
+// the CRC and the length right behind its terminator, at 0x20C.
+_Static_assert(sizeof(FIRMWARE_VERSION) == 13,
+               "the firmware version must be 12 characters, like mcu0_022_000");
 static const char software_version[32] __attribute__ ((section("SV_SECTION"))) __attribute__((used)) = FIRMWARE_VERSION;
 #endif
 
