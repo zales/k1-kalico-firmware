@@ -274,6 +274,12 @@ struct gpio_adc gpio_adc_setup(uint8_t pin)
     
 	while((_ADC_CTL1 & ADC_CTL1_CLB));
 
+	// Switching the ADC on again for a second and third pin leaves a
+	// finished conversion of channel 0 behind. Nobody owns it: left in
+	// place it looks like another input's conversion in progress, and every
+	// input other than channel 0 would wait for it forever.
+	_ADC_STAT &= ~((uint32_t)(ADC_FLAG_EOC | ADC_FLAG_STRC));
+
 	return gpio_adc_rt;
 }
 
