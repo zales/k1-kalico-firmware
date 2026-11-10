@@ -7,8 +7,6 @@ config GD32_SELECT
     default y
     select HAVE_GPIO
     select HAVE_GPIO_ADC
-#    select HAVE_GPIO_I2C
-    select HAVE_GPIO_SPI
     select HAVE_GPIO_BITBANGING
     select HAVE_STRICT_TIMING
     select HAVE_CHIPID
@@ -214,8 +212,6 @@ config FLASH_APPLICATION_ADDRESS
     default 0x8003000 if GD32_FLASH_START_3000
     default 0x8000000
 
-config USBSERIAL
-    bool
 config SERIAL
     bool
 
@@ -227,9 +223,6 @@ choice
     config GD32_SERIAL_USART1_PA2_PA3
         bool "Serial (on USART1 PA2/PA3)"
         select SERIAL
-    config GD32_USB
-        bool "USB"
-        select USBSERIAL
 endchoice
 
 config GD32F303_DISABLE_SWJ
