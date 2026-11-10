@@ -1,4 +1,4 @@
-# at32f40x build rules
+# gd32 build rules
 
 # Setup the toolchain
 CROSS_PREFIX=arm-none-eabi-
@@ -38,6 +38,10 @@ CFLAGS += $(CFLAGS-y) -D$(MCU_UPPER) -mthumb -Ilib/cmsis-core
 
 
 CFLAGS_klipper.elf += --specs=nano.specs --specs=nosys.specs
+# GCC 13 pulls libgcc's unwinder in through newlib-nano, and the unwinder
+# wants the bounds of the exception index. Nothing in the firmware unwinds
+# and the linker script has no .ARM.exidx section, so the bounds are empty.
+CFLAGS_klipper.elf += -Wl,--defsym=__exidx_start=0 -Wl,--defsym=__exidx_end=0
 CFLAGS_klipper.elf += -T $(OUT)src/generic/armcm_link.ld
 $(OUT)klipper.elf: $(OUT)src/generic/armcm_link.ld
 
