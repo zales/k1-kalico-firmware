@@ -59,10 +59,6 @@ src-$(CONFIG_MACH_GD32E23X) += gd32/gd32e23x.c gd32/gd32e23x_gpio.c
 src-$(CONFIG_MACH_GD32E23X) += gd32/gd32e23x_timer.c generic/timer_irq.c
 
 src-$(CONFIG_WANT_GPIO_ADC) += gd32/adc.c
-src-$(CONFIG_WANT_GPIO_I2C) += gd32/i2c.c
-src-$(CONFIG_WANT_GPIO_SPI) += gd32/spi.c
-src-$(CONFIG_USBSERIAL) += gd32/usbserial.c
-src-$(CONFIG_USBSERIAL) += generic/usb_cdc.c
 src-$(CONFIG_SERIAL) += gd32/serial.c generic/serial_irq.c
 src-$(CONFIG_HAVE_GPIO_HARD_PWM) += $(pwm-src-y)
 
